@@ -1,0 +1,16 @@
+.live-button{
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4588F0;
+  padding: 10px 20px;
+  color: #FFFFFF;
+  border-radius: 30px;
+  border: none;
+  outline: none;
+}
+video{
+  width: 100%;
+  height: 100%;
+}
