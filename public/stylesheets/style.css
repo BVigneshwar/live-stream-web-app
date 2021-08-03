@@ -1,16 +1,135 @@
-.live-button{
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4588F0;
-  padding: 10px 20px;
-  color: #FFFFFF;
-  border-radius: 30px;
-  border: none;
-  outline: none;
+body{
+  margin: 0px;
+  padding: 0px;
+}
+.pointer{
+  cursor: pointer;
 }
 video{
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+.app-header{
+  position: relative;
+  border-bottom: 1px solid #cccccc;
+  box-shadow: 1px 1px 7px #ccc;
+}
+.app-header h3{
+  display: inline-block;
+  margin: 0px;
+  padding: 10px;
+}
+.app-container{
+  position: relative;
+  height: calc(100% - 45px);
+}
+.not-active{
+  opacity: 0.5;
+}
+.center-align{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.live-button{
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);  
+}
+.live-card-container{
+  display: inline-block;
+  width: 250px;
+  padding: 10px;
+  margin: 10px;
+  border: 1px solid #ccc;
+}
+.card-name{
+  font-size: 16px;
+  font-weight: 700;
+}
+.card-description{
+  font-size: 15px;
+}
+.card-time-container{
+  display: inline-block;
+  width: 49%;
+}
+.card-likes-container, .card-viewers-container{
+  display: inline-block;
+  width: 23%;
+}
+.likes-icon{
+  display: inline-block;
+  vertical-align: middle;
+  height: 15px;
+  width: 15px;
+  background-image: url('/images/like-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.viewer-icon{
+  display: inline-block;
+  vertical-align: middle;
+  height: 15px;
+  width: 15px;
+  background-image: url('/images/user-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.card-likes, .card-viewers{
+  display: inline-block;
+  vertical-align: middle;
+}
+.heart-icon-position{
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+.mute-icon-position{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.mute-icon{
+  display: inline-block;
+  vertical-align: middle;
+  height: 50px;
+  width: 50px;
+  background-image: url('/images/mute-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.heart-icon{
+  display: inline-block;
+  vertical-align: middle;
+  height: 25px;
+  width: 25px;
+  background-image: url('/images/like-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.floating-heart-container{
+  position: absolute;
+  height: 50vh;
+  width: 100px;
+  bottom: 50px;
+  right: 10px;
+}
+.floating-heart{
+  position: absolute;
+  top: 100%;
+  opacity: 1;
+  transition: top 2s, opacity 2s;
+  transition-timing-function: ease-in;
+}
+.floating-heart.fly{
+  top:0%;
+  opacity: 0;
 }
