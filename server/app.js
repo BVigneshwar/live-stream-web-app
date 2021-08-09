@@ -1,18 +1,22 @@
-var createError = require('http-errors');
-var exphbs  = require('express-handlebars');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const exphbs  = require('express-handlebars');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const session = require('express-session');
 
 const PORT = '3000';
 
-var express = require('express');
-var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
-var apiRouter = require('./api');
+const express = require('express');
+const app = express();
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
+const apiRouter = require('./api');
 
-var {getLiveBySessionId, updateClientId, deleteLiveBySessionId, incrementLikeBySessionId} = require('./db');
+var {getLiveBySessionId, updateClientId, deleteLiveBySessionId, incrementLikeBySessionId, incrementViewersBySessionId, decrementViewersBySessionId} = require('./db');
+
+
+var {passport, checkAuthenticated, checkNotAuthenticated} = require('./passport-config');
 
 // view engine setup
 app.set('views', path.join(__dirname, '/../views'));
@@ -24,28 +28,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser("live-stream"));
 app.use(express.static(path.join(__dirname, '/../public')));
-
-app.use(function(req, res, next) {
-  if(req.path == "/login" || req.path == "/api/login"){
-    next();
-  }else if(!req.signedCookies.user){
-    res.redirect("/login");
-  }else{
-    next();
-  }
-});
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/api', apiRouter);
 
-app.get('/', function(req, res) {
-  res.redirect('/login');
-});
-
-app.get(['/login', '/home', '/host', '/live'], function(req, res) {
+app.get('/register', checkNotAuthenticated, function(req, res){
   res.render('loading', {});
 });
 
-app.get('/*', function(req, res) {
+app.get('/login', checkNotAuthenticated, function(req, res){
+  res.render('loading', {});
+});
+
+app.get(['/home', '/host', '/live'], checkAuthenticated, function(req, res) {
+  res.render('loading', {});
+});
+
+app.get('/*', checkAuthenticated, function(req, res) {
   res.redirect('/home');
 });
 
@@ -53,30 +58,38 @@ io.on('connection', function(socket){
   socket.on('host-session', function(session_id, client_id){
     socket.join(session_id);
     updateClientId({session_id : session_id, client_id : client_id}, function(results){
+      socket.host = true;
       socket.session_id = session_id;
     });
   });
 
-  socket.on('join-session', function(session_id, client_id){
+  socket.on('join-session', function(session_id, client_id, name){
     socket.join(session_id);
-    socket.broadcast.to(session_id).emit('user-connected', client_id);
-    getLiveBySessionId(session_id, function(result){
-      socket.emit('client-id', result.client_id);
+    socket.name = name;
+    socket.session_id = session_id;
+    socket.broadcast.to(session_id).emit('user-connected', name, client_id);
+    incrementViewersBySessionId(session_id, function(){});
+    getLiveBySessionId(socket.session_id, function(result){
+      socket.emit('host-details', result);
     });
   });
 
-  socket.on('increment-like', function(session_id){
-    socket.broadcast.to(session_id).emit('like');
-    incrementLikeBySessionId(session_id, function(){
-      
-    });
+  socket.on('increment-like', function(){
+    socket.broadcast.to(socket.session_id).emit('like');
+    incrementLikeBySessionId(socket.session_id, function(){});
   });
 
-  socket.on('disconnect', function(session_id, client_id){
-    if(socket.session_id){
-      deleteLiveBySessionId(socket.session_id, function(){
+  socket.on('message', function(sender, message){
+    socket.broadcast.to(socket.session_id).emit('message', sender, message);
+  });
 
-      });
+  socket.on('disconnect', function(){
+    if(socket.host){
+      deleteLiveBySessionId(socket.session_id, function(){});
+      socket.broadcast.to(socket.session_id).emit('session-left');
+    }else{
+      decrementViewersBySessionId(socket.session_id, function(){});
+      socket.broadcast.to(socket.session_id).emit('user-disconnected', socket.name);
     }
   });
 });

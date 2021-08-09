@@ -5,141 +5,115 @@ const CREATE_TABLE = 'create table live_table(id int not null auto_increment, ho
 const connectionPool = mysql.createPool({
     connectionLimit     : 10,
     host                : 'localhost',
-    user                : '******',	//User name
-    password            : '******',	//Password
+    user                : '******',
+    password            : '******',
     database            : 'live_stream',
     waitForConnections  : true
 });
 
-function getConnection(cbk){
+function getConnectionAndExecuteQuery(query, data, cbk){
     connectionPool.getConnection(function(err, connection){
         if(err){
             throw err;
         }
-        cbk(connection);
+
+        function queryCallback(error, results, fields){
+            if(error){
+                throw error;
+            }
+            connection.release();
+            cbk(results);
+        }
+        
+        if(data){
+            connection.query(query, data, queryCallback);
+        }else{
+            connection.query(query, data, queryCallback);
+        }
     });
 }
 
 function getAllLive(cbk){
-    getConnection(function(connection){
-        connection.query("SELECT * FROM LIVE_TABLE WHERE client_id IS NOT NULL ORDER BY name ASC", function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
+    getConnectionAndExecuteQuery("SELECT * FROM LIVE_TABLE WHERE client_id IS NOT NULL ORDER BY name ASC", undefined, (results) => {
+        var resultObj = results.map(function(data, index){
+            return {
+                id : data.id,
+                host : data.host,
+                name : data.name,
+                description : data.description,
+                session_id : data.session_id,
+                client_id : data.client_id,
+                likes : data.likes,
+                viewers : data.viewers,
+                time : Date.parse(data.time)
             }
-            var resultObj = results.map(function(data, index){
-                return {
-                    id : data.id,
-                    host : data.host,
-                    name : data.name,
-                    description : data.description,
-                    session_id : data.session_id,
-                    client_id : data.client_id,
-                    likes : data.likes,
-                    viewers : data.viewers,
-                    time : Date.parse(data.time)
-                }
-            });
-            cbk(resultObj);
         });
+        cbk(resultObj);
     });
 }
 
 function getLiveBySessionId(session_id, cbk){
-    getConnection(function(connection){
-        connection.query("SELECT * FROM LIVE_TABLE WHERE session_id = ?", [session_id], function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
+    getConnectionAndExecuteQuery("SELECT * FROM LIVE_TABLE WHERE session_id = ?", [session_id], (results) => {
+        var resultObj = results.map(function(data, index){
+            return {
+                id : data.id,
+                host : data.host,
+                name : data.name,
+                description : data.description,
+                session_id : data.session_id,
+                client_id : data.client_id,
+                likes : data.likes,
+                viewers : data.viewers,
+                time : Date.parse(data.time)
             }
-            var resultObj = results.map(function(data, index){
-                return {
-                    id : data.id,
-                    host : data.host,
-                    name : data.name,
-                    description : data.description,
-                    session_id : data.session_id,
-                    client_id : data.client_id,
-                    likes : data.likes,
-                    viewers : data.viewers,
-                    time : Date.parse(data.time)
-                }
-            });
-            cbk(resultObj[0]);
         });
+        cbk(resultObj[0]);
     });
 }
 
 function postLive(data, cbk){
     var {host, name, description, session_id} = data;
-    getConnection(function(connection){
-        connection.query("INSERT INTO live_table(host, name, description, session_id) VALUES(?, ?, ?, ?)", [host, name, description, session_id], function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
-            }
-            cbk(results);
-        });
+    getConnectionAndExecuteQuery("INSERT INTO live_table(host, name, description, session_id) VALUES(?, ?, ?, ?)", [host, name, description, session_id], (results) => {
+        cbk(results);
     });
 }
 
 function updateClientId(data, cbk){
     var {session_id, client_id} = data;
-    getConnection(function(connection){
-        connection.query("UPDATE live_table SET client_id = ? WHERE session_id = ?", [client_id, session_id], function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
-            }
-            cbk(results);
-        });
+    getConnectionAndExecuteQuery("UPDATE live_table SET client_id = ? WHERE session_id = ?", [client_id, session_id], (results) => {
+        cbk(results);
     });
 }
 
 function deleteLiveBySessionId(session_id, cbk){
-    getConnection(function(connection){
-        connection.query("DELETE FROM live_table WHERE session_id = ?", [session_id], function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
-            }
-            cbk(results);
-        });
+    getConnectionAndExecuteQuery("DELETE FROM live_table WHERE session_id = ?", [session_id], (results) => {
+        cbk(results);
     });
 }
 
 function incrementLikeBySessionId(session_id, cbk){
-    getConnection(function(connection){
-        connection.query("UPDATE live_table SET likes = likes + 1 WHERE session_id = ?", [session_id], function(error, results, fields){
-            connection.release();
-            if(error){
-                throw error;
-            }
-            cbk(results);
-        });
+    getConnectionAndExecuteQuery("UPDATE live_table SET likes = likes + 1 WHERE session_id = ?", [session_id], (results) => {
+        cbk(results);
     });
 }
 
-getConnection((connection) => {
-    connection.query("CREATE DATABASE IF NOT EXISTS live_stream", function(error, results, fields){
-        if(error){
-            throw error;
+function incrementViewersBySessionId(session_id, cbk){
+    getConnectionAndExecuteQuery("UPDATE live_table SET viewers = viewers + 1 WHERE session_id = ?", [session_id], (results) => {
+        cbk(results);
+    });
+}
+
+function decrementViewersBySessionId(session_id, cbk){
+    getConnectionAndExecuteQuery("UPDATE live_table SET viewers = viewers - 1 WHERE session_id = ?", [session_id], (results) => {
+        cbk(results);
+    });
+}
+
+getConnectionAndExecuteQuery("CREATE DATABASE IF NOT EXISTS live_stream", undefined, (results) => {
+    getConnectionAndExecuteQuery("SHOW TABLES LIKE 'live_table'", undefined, (results) => {
+        if(results.length == 0){
+            getConnectionAndExecuteQuery(CREATE_TABLE, undefined, (results) => {});
         }
-        connection.query("SHOW TABLES LIKE 'live_table'", function(error, results, fields){
-            if(error){
-                throw error;
-            }
-            if(results.length > 0){
-                connection.release();
-            }else{
-                connection.query(CREATE_TABLE, function(error, results, fields){
-                    if(error){
-                        throw error;
-                    }
-                    connection.release();
-                });
-            }
-        });
     });
 });
 
@@ -149,3 +123,5 @@ exports.postLive = postLive;
 exports.updateClientId = updateClientId;
 exports.deleteLiveBySessionId = deleteLiveBySessionId;
 exports.incrementLikeBySessionId = incrementLikeBySessionId;
+exports.incrementViewersBySessionId = incrementViewersBySessionId;
+exports.decrementViewersBySessionId = decrementViewersBySessionId;
