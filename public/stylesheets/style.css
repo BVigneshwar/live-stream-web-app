@@ -1,6 +1,17 @@
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 body{
-  margin: 0px;
-  padding: 0px;
+  background-image: linear-gradient(to top, #a8edea 0%, #fed6e3 100%);
+  color: #3e403f;
 }
 .fleft{
   float: left;
@@ -19,19 +30,62 @@ video{
   height: 100%;
   object-fit: cover;
 }
-.app-header{
-  position: relative;
-  border-bottom: 1px solid #cccccc;
-  box-shadow: 1px 1px 7px #ccc;
-}
 .app-header h3{
   display: inline-block;
   margin: 0px;
   padding: 10px;
 }
+.popup-container{
+  background-image: linear-gradient(-225deg, #E3FDF5 50%, #FFE6FA 50%);
+  box-shadow: 0 9px 50px hsla(20, 67%, 75%, 0.31);
+  border-radius: 5px;
+  padding: 50px;
+}
+.popup-container h2{
+  font-size: 40px;
+  margin-bottom: 40px;
+}
+input[type="text"], input[type="password"]{
+  width: 250px;
+  height: 50px;
+  margin-top: 10px;
+  padding: 15px;
+  font-size: 16px;
+  color: #5E6472;
+  outline: none;
+  border: none;
+  border-radius: 0px 5px 5px 0px;
+}
+#error-message{
+  color: #E53935;
+  height: 20px;
+}
+button{
+  display: inline-block;
+  color: #252537;
+  width: 250px;
+  height: 50px;
+  padding: 0 20px;
+  background: #fff;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  margin: 10px auto;
+  cursor: pointer;
+}
+.logout-button{
+  background: transparent;
+  font-weight: bold;
+  color: #E53935;
+  width: auto;
+  height: auto;
+}
 .app-container{
   position: relative;
   height: calc(100% - 45px);
+  overflow: auto;
 }
 .not-active{
   opacity: 0.5;
@@ -46,17 +100,35 @@ video{
   transform: translate(-50%, -50%);
 }
 .live-button{
-  position: absolute;
+  position: fixed;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);  
+}
+.cancel-button{
+  width: 125px;
+  background: transparent;
+}
+.submit-button{
+  width: 125px;
+  background-color: #B8F2E6;
+}
+.overlay-screen{
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(1, 1, 1, 0.3);
 }
 .live-card-container{
   display: inline-block;
   width: 250px;
   padding: 10px;
   margin: 10px;
-  border: 1px solid #ccc;
+  background-image: linear-gradient(155deg, #E3FDF5 50%, #FFE6FA 50%);
+  box-shadow: 0 9px 50px hsla(20, 67%, 75%, 0.31);
+  border-radius: 5px;
 }
 .card-name{
   font-size: 16px;
@@ -120,23 +192,39 @@ video{
 h4.host-name{
   margin: 0px;
 }
-.message-container{
+.message-list-wrapper{
   position: absolute;
-  bottom: 50px;
+  bottom: 60px;
   height: 50vh;
+  width: 25vw;
+  overflow: auto;
+}
+.message-list-container{
+  position: absolute;
+  bottom: 0;
+  max-height: 50vh;
   width: 25vw;
 }
 .message-input-container{
   position: absolute;
-  bottom: 0px;
+  bottom: 10px;
   height: 50px;
   width: 100%;
 }
-.message-input-container input{
+#message-input{
   width: calc(100% - 108px);
+  border-radius: 40px;
+  border: 1px solid #a8edea;
+  background: transparent;
+  margin: 0px 10px;
+  color: #a8edea;
+}
+#message-input:focus{
+  background-color: #ffffff;
+  color: #3e403f;
 }
 .message-input-container button{
-  width: 100px;
+  width: 80px;
 }
 .likes-container{
   position: absolute;
@@ -162,7 +250,57 @@ h4.host-name{
   top:0%;
   opacity: 0;
 }
+.message-container{
+  margin: 10px;
+}
+.message{
+  display: inline-block;
+  padding: 5px 10px;
+  background: #a8edea;
+  border-radius: 5px;
+}
+.message-sender{
+  font-weight: bold;
+}
 .join-message{
+  margin: 10px;
+  padding: 5px 10px;
+  background-image: linear-gradient(to right, #fed6e3, #a8edea);
+  border-radius: 5px;
   text-align: center;
   font-weight: bold;
+}
+#send-like-button{
+  background-image: linear-gradient(to right, #fed6e3, #a8edea);
+  border-radius: 100%;
+  width: auto;
+  margin: 0px 10px;
+  padding: 0px 10px;
+}
+#send-like-button::before{
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  height: 25px;
+  width: 30px;
+  background-image: url('/images/heart-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+#message-input:focus + #send-like-button::before{
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  height: 25px;
+  width: 30px;
+  background-image: url('/images/send-icon.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.message-list-wrapper::-webkit-scrollbar { display: none; -webkit-appearance: none; }
+.message-list-wrapper{
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }

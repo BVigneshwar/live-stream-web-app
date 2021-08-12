@@ -104,8 +104,9 @@ function getuserDetails(cbk){
         getAjax("/api/user", function(response){
             USER = response;
             userElem = document.createElement('h3');
-            userElem.innerText = USER;
+            userElem.innerText = "Hi, " + USER;
             logoutButton = document.createElement('button');
+            logoutButton.classList.add("logout-button");
             logoutButton.innerText = 'Logout';
             logoutButton.onclick = function(){
                 postAjax('/api/logout', undefined, function(){
@@ -125,7 +126,7 @@ function getuserDetails(cbk){
 }
 
 function renderUserConnected(name){
-    var message_container = document.getElementsByClassName("message-container")[0];
+    var message_container = document.getElementsByClassName("message-list-container")[0];
     var elem = document.createElement('div');
     elem.classList.add('join-message');
     elem.innerText = name + ' joined';
@@ -136,7 +137,7 @@ function renderUserConnected(name){
 }
 
 function renderUserDisconnected(name){
-    var message_container = document.getElementsByClassName("message-container")[0];
+    var message_container = document.getElementsByClassName("message-list-container")[0];
     var elem = document.createElement('div');
     elem.classList.add('join-message');
     elem.innerText = name + ' left';
@@ -147,21 +148,19 @@ function renderUserDisconnected(name){
 }
 
 function renderMessage(sender, msg){
-    var message_container = document.getElementsByClassName("message-container")[0];
+    var message_container = document.getElementsByClassName("message-list-container")[0];
     var elem = document.createElement('div');
-    elem.classList.add('message');
-    elem.innerHTML = `<div>${sender}</div><div>${msg}</div>`;
+    elem.classList.add('message-container');
+    elem.innerHTML = `<div class="message"><div class="message-sender">${sender}</div><div class="message-content">${msg}</div></div>`;
     message_container.appendChild(elem);
 }
 
 function registerPage(){
-    $container.innerHTML = '<form id="register-container" class="center-align" method="POST">\
-        <label for="name">Name</label>\
-        <input id="name" name="name" type="text" required/><br/>\
-        <label for="email">Email</label>\
-        <input id="email" name="email" type="text" required/><br/>\
-        <label for="password">Password</label>\
-        <input id="password" name="password" type="password" required/><br/>\
+    $container.innerHTML = '<form id="register-container" class="center-align center-text-align popup-container">\
+        <h2>Register</h2>\
+        <input id="name" name="name" type="text" placeholder="Name" required/><br/>\
+        <input id="email" name="email" type="text" placeholder="Email" required/><br/>\
+        <input id="password" name="password" type="password" placeholder="Password" required/><br/>\
         <button type="submit" id="register-button">Register</button>\
     </form>';
     var registerForm = document.getElementById("register-container");
@@ -180,15 +179,15 @@ function registerPage(){
 }
 
 function loginPage(){
-    $container.innerHTML = '<div class="center-align">\
+    $container.innerHTML = '<div class="center-align center-text-align popup-container">\
+        <h2>Log in</h2>\
         <div id="error-message" class="center-text-align"></div>\
         <form id="login-form" method="POST">\
-            <label for="email">Email</label>\
-            <input id="email" name="email" type="text" required/><br/>\
-            <label for="password">Password</label>\
-            <input id="password" name="password" type="password" required/><br/>\
+            <input id="email" name="email" type="text" placeholder="Email" required/><br/>\
+            <input id="password" name="password" type="password" placeholder="Password" required/><br/>\
             <button type="submit" id="login-button">Login</button>\
         </form>\
+        <div>OR</div>\
         <button id="register-button">Register</button>\
         </div>';
     
@@ -257,10 +256,45 @@ function homePage(){
     });
     var liveButton = document.getElementById("live-button");
     liveButton.onclick = function(event){
-        postAjax("/api/live", {name : "test", description : "description test"}, function(response){
+        renderLiveDetailsPopup();
+    }
+}
+
+function renderLiveDetailsPopup(){
+    var popupElem = document.createElement("div");
+    popupElem.classList.add("center-align", "center-text-align", "popup-container");
+    popupElem.innerHTML = '<h2>Live Details</h2>\
+        <form id="live-form" method="POST">\
+            <input id="name" name="name" type="text" placeholder="Name" required/><br/>\
+            <input id="description" name="description" type="text" placeholder="Description"/><br/>\
+            <button id="cancel-button" class="cancel-button">Cancel</button>\
+            <button type="submit" id="start-button" class="submit-button">Start</button>\
+        </form>';
+    var overlayScreen = document.createElement("div");
+    overlayScreen.classList.add("overlay-screen");
+    $container.appendChild(overlayScreen);
+    $container.appendChild(popupElem);
+
+    var liveForm = document.getElementById("live-form");
+    liveForm.onsubmit = function(event){
+        event.preventDefault();
+        var obj = {};
+        for(var i=0; i<event.target.length-2; i++){
+            obj[event.target[i].name] = event.target[i].value;
+        }
+        postAjax("/api/live", obj, function(response){
             HOST = response.host;
             setUrlPath("/host?id="+response.session_id);
         });
+    }
+    var cancelButton = document.getElementById("cancel-button");
+    cancelButton.onclick = function(){
+        popupElem.remove();
+        overlayScreen.remove();
+    }
+    overlayScreen.onclick = function(){
+        popupElem.remove();
+        overlayScreen.remove();
     }
 }
 
@@ -272,8 +306,12 @@ function hostPage(){
                                 <h4 class="host-name">'+HOST+'</h4>\
                                 <div class="viewer-icon"></div>\
                                 <div class="viewers-count middle-inline-block">0</div>\
+                                <div class="likes-icon"></div>\
+                                <div class="likes-count middle-inline-block">0</div>\
                             </div>\
-                            <div class="message-container"></div>\
+                            <div class="message-list-wrapper">\
+                                <div class="message-list-container"></div>\
+                            </div>\
                             <div class="message-input-container">\
                                 <input type="text" id="message-input"/>\
                                 <button id="send-button">Send</button>\
@@ -339,18 +377,18 @@ function livePage(){
                                 <h4 class="host-name">'+HOST+'</h4>\
                                 <div class="viewer-icon"></div>\
                                 <div class="viewers-count middle-inline-block">0</div>\
+                                <div class="likes-icon"></div>\
+                                <div class="likes-count middle-inline-block">0</div>\
                             </div>\
-                            <div class="message-container"></div>\
+                            <div class="message-list-wrapper">\
+                                <div class="message-list-container"></div>\
+                            </div>\
                             <div class="message-input-container">\
                                 <input type="text" id="message-input"/>\
-                                <button id="send-button">Send</button>\
+                                <button id="send-like-button"></button>\
                             </div>\
                             <div class="likes-container">\
                                 <div id="floating-heart-container" class="floating-heart-container"></div>\
-                                <div class="center-text-align">\
-                                    <div class="likes-icon"></div>\
-                                    <div class="likes-count middle-inline-block">0</div>\
-                                </div>\
                             </div>';
     var myVideo = document.getElementById("live-video");
 
@@ -384,6 +422,13 @@ function livePage(){
             socket.on('like', function(){
                 floatingHeart();
             });
+            socket.on('session-left', function(){
+                var message_container = document.getElementsByClassName("message-list-container")[0];
+                var elem = document.createElement('div');
+                elem.classList.add('join-message');
+                elem.innerText = 'Live finished';
+                message_container.appendChild(elem);
+            });
         });
     });
     myPeer.on('call', function(call){
@@ -395,7 +440,7 @@ function livePage(){
     });
 
     var message_input = document.getElementById("message-input");
-    var send_message = document.getElementById("send-button");
+    var send_message = document.getElementById("send-like-button");
     send_message.onclick = function(){
         var msg = (message_input.value).trim();
         if(msg){
